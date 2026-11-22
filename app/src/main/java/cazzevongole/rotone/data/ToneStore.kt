@@ -27,7 +27,7 @@ data class RotationState(
 ) {
     /** The tone the next notification will play, or null when the list is empty. */
     val nextTone: Tone?
-        get() = tones.getOrNull(nextIndex.mod(tones.size))
+        get() = if (tones.isEmpty()) null else tones.getOrNull(nextIndex.mod(tones.size))
 }
 
 /**
