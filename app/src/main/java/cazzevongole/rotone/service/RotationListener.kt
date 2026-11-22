@@ -6,9 +6,8 @@ import android.media.AudioManager
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import cazzevongole.rotone.audio.TonePlayer
-import cazzevongole.rotone.data.PlayMode
+import cazzevongole.rotone.data.Rotation
 import cazzevongole.rotone.data.ToneStore
-import kotlin.random.Random
 
 /**
  * Advances the rotation whenever a notification is posted.
@@ -84,24 +83,26 @@ class RotationListener : NotificationListenerService() {
 
     private fun playNext() {
         val current = store.load()
-        if (!current.enabled || current.tones.isEmpty()) return
+        val size = current.tones.size
+        if (!current.enabled || size == 0) return
 
         val now = System.currentTimeMillis()
         if (now - lastPlayedAt < BURST_WINDOW_MS || player.isPlaying()) return
 
-        val size = current.tones.size
-        val index = if (current.mode == PlayMode.SHUFFLE && size > 1) {
-            val lastPlayed = (current.nextIndex - 1 + size).mod(size)
-            var pick = Random.nextInt(size)
-            // Shuffle should not repeat the sound that just played.
-            if (pick == lastPlayed) pick = (pick + 1).mod(size)
-            pick
-        } else {
-            current.nextIndex.mod(size)
-        }
-
+        val index = Rotation.pick(
+            mode = current.mode,
+            pointer = current.nextIndex,
+            size = size,
+            lastPlayed = current.lastPlayedIndex,
+        )
         if (!player.play(store.fileFor(current.tones[index]))) return
+
         lastPlayedAt = now
-        store.save(current.copy(nextIndex = (index + 1).mod(size)))
+        store.save(
+            current.copy(
+                nextIndex = Rotation.advance(index, size),
+                lastPlayedIndex = index,
+            ),
+        )
     }
 }

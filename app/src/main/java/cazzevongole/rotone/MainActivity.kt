@@ -73,7 +73,7 @@ class MainActivity : ComponentActivity() {
                     onMove = ::move,
                     onRemove = ::remove,
                     onPreview = { player.play(store.fileFor(it)) },
-                    onResetPointer = { save(state.copy(nextIndex = 0)) },
+                    onResetPointer = { save(state.copy(nextIndex = 0, lastPlayedIndex = -1)) },
                     onOpenAccessSettings = ::openAccessSettings,
                     onPickSystemSound = ::pickSystemSound,
                     onPickFile = ::pickAudioFile,
@@ -122,8 +122,15 @@ class MainActivity : ComponentActivity() {
         var next = state.nextIndex
         if (index < next) next -= 1
         next = if (tones.isEmpty()) 0 else next.mod(tones.size)
+        var lastPlayed = state.lastPlayedIndex
+        lastPlayed = when {
+            tones.isEmpty() -> -1
+            index == lastPlayed -> -1
+            index < lastPlayed -> lastPlayed - 1
+            else -> lastPlayed
+        }
         store.deleteFile(tone)
-        save(state.copy(tones = tones, nextIndex = next))
+        save(state.copy(tones = tones, nextIndex = next, lastPlayedIndex = lastPlayed))
     }
 
     private fun importSound(uri: Uri) {

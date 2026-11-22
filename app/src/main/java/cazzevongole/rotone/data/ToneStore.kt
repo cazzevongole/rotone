@@ -6,8 +6,6 @@ import android.media.RingtoneManager
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.webkit.MimeTypeMap
-import org.json.JSONArray
-import org.json.JSONObject
 import java.io.File
 import java.util.UUID
 
@@ -24,6 +22,7 @@ data class RotationState(
     val mode: PlayMode = PlayMode.IN_ORDER,
     val nextIndex: Int = 0,
     val enabled: Boolean = true,
+    val lastPlayedIndex: Int = -1,
 ) {
     /** The tone the next notification will play, or null when the list is empty. */
     val nextTone: Tone?
@@ -49,47 +48,10 @@ class ToneStore(context: Context) {
 
     val preferences: SharedPreferences get() = prefs
 
-    fun load(): RotationState {
-        val raw = prefs.getString(KEY_STATE, null) ?: return RotationState()
-        return try {
-            val json = JSONObject(raw)
-            val array = json.optJSONArray("tones") ?: JSONArray()
-            val tones = ArrayList<Tone>(array.length())
-            for (index in 0 until array.length()) {
-                val item = array.optJSONObject(index) ?: continue
-                val id = item.optString("id")
-                val fileName = item.optString("fileName")
-                if (id.isEmpty() || fileName.isEmpty()) continue
-                val name = item.optString("name").ifEmpty { "Sound" }
-                tones.add(Tone(id = id, name = name, fileName = fileName))
-            }
-            RotationState(
-                tones = tones,
-                mode = if (json.optString("mode") == "shuffle") PlayMode.SHUFFLE else PlayMode.IN_ORDER,
-                nextIndex = if (tones.isEmpty()) 0 else json.optInt("nextIndex", 0).mod(tones.size),
-                enabled = json.optBoolean("enabled", true),
-            )
-        } catch (error: Throwable) {
-            RotationState()
-        }
-    }
+    fun load(): RotationState = RotationJson.decode(prefs.getString(KEY_STATE, null))
 
     fun save(state: RotationState) {
-        val json = JSONObject()
-            .put("mode", if (state.mode == PlayMode.SHUFFLE) "shuffle" else "order")
-            .put("nextIndex", state.nextIndex)
-            .put("enabled", state.enabled)
-        val array = JSONArray()
-        state.tones.forEach { tone ->
-            array.put(
-                JSONObject()
-                    .put("id", tone.id)
-                    .put("name", tone.name)
-                    .put("fileName", tone.fileName),
-            )
-        }
-        json.put("tones", array)
-        prefs.edit().putString(KEY_STATE, json.toString()).apply()
+        prefs.edit().putString(KEY_STATE, RotationJson.encode(state)).apply()
     }
 
     fun fileFor(tone: Tone): File = File(toneDir, tone.fileName)
