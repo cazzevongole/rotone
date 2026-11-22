@@ -1,6 +1,7 @@
 # RoTone
 
 [![CI](https://github.com/cazzevongole/rotone/actions/workflows/ci.yml/badge.svg)](https://github.com/cazzevongole/rotone/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/cazzevongole/rotone?label=download)](https://github.com/cazzevongole/rotone/releases/latest)
 
 **RoTone rotates the sound your phone plays for notifications.**
 
@@ -16,6 +17,12 @@ blip for the whole day.
 | Built with | Kotlin, Jetpack Compose (Material 3) |
 | Permissions | Notification access only — no network, no accounts, no analytics |
 | Size | ~9.5 MB debug APK |
+
+## Screenshots
+
+| In order | Shuffle |
+| --- | --- |
+| <img src="docs/screenshot-list.png" width="320" alt="RoTone main screen: four sounds in play order, the next one highlighted"> | <img src="docs/screenshot-shuffle.png" width="320" alt="RoTone with shuffle mode selected"> |
 
 ---
 
@@ -52,15 +59,18 @@ Dark and light themes follow the system, with Material You dynamic colours on An
 
 ## Install it on a phone
 
-### Option A — grab the APK the CI built
+### Option A — download the released APK (easiest)
 
-Every push to `main` runs the build and publishes the debug APK as a workflow artifact:
+Every green push to `main` publishes the APK to the
+[Releases](https://github.com/cazzevongole/rotone/releases/latest) page, so this link always points
+at the newest build:
 
-1. Open the [Actions](https://github.com/cazzevongole/rotone/actions) tab and pick the latest **CI** run.
-2. Download the **rotone-debug-apk** artifact (a zip; downloading artifacts requires being signed in
-   to GitHub).
-3. Unzip it, move `app-debug.apk` to the phone and open it. Allow "install unknown apps" for the app
-   you open it from when Android asks.
+1. Open the latest release and download **`app-debug.apk`**.
+2. Open it on the phone and allow "install unknown apps" for the app you opened it from when Android
+   asks.
+
+The release is rebuilt from `main` on each push, and the release notes record the commit it came
+from.
 
 ### Option B — install over USB with adb
 
@@ -70,6 +80,9 @@ With the phone connected and USB debugging enabled:
 adb install -r app-debug.apk
 adb shell am start -n cazzevongole.rotone/.MainActivity
 ```
+
+Any build from the [Actions](https://github.com/cazzevongole/rotone/actions) tab works here too: the
+**rotone-debug-apk** artifact of a run is the same file that gets released.
 
 ### Then grant notification access
 
@@ -140,7 +153,9 @@ needs escaped backslashes, e.g. `sdk.dir=C\:\\Users\\you\\AppData\\Local\\Androi
 
 R8 code shrinking and resource shrinking are enabled, so the result in
 `app/build/outputs/apk/release/app-release-unsigned.apk` is unsigned. Sign it with your own keystore
-via `apksigner` (or add a `signingConfig`) before installing it.
+via `apksigner` (or add a `signingConfig`) before installing it. The released APK on the Releases
+page is the signed-by-debug-key CI build, which installs directly but cannot be uploaded through the
+Play Store.
 
 ## Tests
 
@@ -164,13 +179,19 @@ exercise.
 
 ## CI
 
-`.github/workflows/ci.yml` runs on every push to `main` (and on manual dispatch):
+`.github/workflows/ci.yml` runs on every push to `main` (and on manual dispatch), as three separate
+jobs:
 
-1. Ubuntu runner, Temurin JDK 17, Gradle cache.
-2. `./gradlew testDebugUnitTest` — **tests run first and fail the workflow before the build step**.
-3. `./gradlew assembleDebug`.
-4. Uploads `app-debug.apk` as the `rotone-debug-apk` artifact, plus the test report when something
-   fails.
+| Job | What it does | Runs after |
+| --- | --- | --- |
+| **Unit tests** | `./gradlew testDebugUnitTest`, uploads the HTML report | — |
+| **Build debug APK** | `./gradlew assembleDebug`, uploads `rotone-debug-apk` | tests pass |
+| **Publish APK to Releases** | downloads the APK and attaches it to the `v<versionName>` release, creating it on the first run and updating it afterwards | build passes |
+
+A failing test therefore stops the build before it starts, and a failing build means no release is
+published. The release job has a write-scoped `GITHUB_TOKEN`; the other two are read-only. Because
+the tag is derived from `versionName` (`1.0` today), pushes to `main` update the same release until
+the version in `app/build.gradle.kts` changes.
 
 ## How it works
 
@@ -213,7 +234,8 @@ app/src/main/java/cazzevongole/rotone/
     ├── RotationScreen.kt         the whole screen in Compose
     └── Theme.kt                  Material 3 theme, dynamic colours
 app/src/test/java/cazzevongole/rotone/data/   JVM unit tests
-.github/workflows/ci.yml                      tests + build + APK artifact
+docs/                                         screenshots used above
+.github/workflows/ci.yml                      tests, build, release
 ```
 
 ## Troubleshooting
@@ -228,10 +250,13 @@ app/src/test/java/cazzevongole/rotone/data/   JVM unit tests
 - **Rotation stops after a while.** Some vendors (Samsung, Xiaomi, Huawei) aggressively kill
   background apps; exclude RoTone from battery optimisation if the listener stops receiving
   notifications.
-- **Play Store-style warnings on install.** The APK is an unsigned-by-store debug build; sideloading
-  always shows the "unknown app" prompt.
+- **Play Store-style warnings on install.** The released APK is built by CI with the debug key and
+  is not from a store; sideloading always shows the "unknown app" prompt.
 
 ## Not included
 
-The app does not modify other apps' sounds, does not post its own notifications, has no network
-permission, and stores nothing outside its own private folder.
+- The rotation is **global**: one list, one pointer, every notification that reaches the listener.
+  Per-app rotation is not implemented — the notification's originating package would have to be
+  matched against per-app lists, which the listener already receives as `sbn.packageName`.
+- The app does not modify other apps' sounds, does not post its own notifications, has no network
+  permission, and stores nothing outside its own private folder.
