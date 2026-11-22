@@ -14,7 +14,7 @@ Repo: https://github.com/cazzevongole/rotone
 Builds:
   - versionName: '1.2'
     versionCode: 3
-    commit: 3903498bf4f3ef5e5972d84dfe6f4b1fa4bfb6a5
+    commit: 2fc828bb5738a440c66d6f7c72aab2a13730f239
     gradle:
       - yes
 
