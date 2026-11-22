@@ -16,8 +16,11 @@ import androidx.compose.runtime.setValue
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.IntentCompat
 import cazzevongole.rotone.audio.TonePlayer
+import cazzevongole.rotone.data.AppRule
+import cazzevongole.rotone.data.KnownPackage
 import cazzevongole.rotone.data.RotationState
 import cazzevongole.rotone.data.Tone
+import cazzevongole.rotone.data.ToneList
 import cazzevongole.rotone.data.ToneStore
 import cazzevongole.rotone.ui.RoToneTheme
 import cazzevongole.rotone.ui.RotationScreen
@@ -31,7 +34,10 @@ class MainActivity : ComponentActivity() {
     private var accessGranted by mutableStateOf(false)
     private var notice by mutableStateOf<String?>(null)
 
-    /** The listener runs in this same process, so its saved pointer shows up here immediately. */
+    /** null edits the fallback rotation, a package name edits that app's own rotation. */
+    private var scope by mutableStateOf<String?>(null)
+
+    /** The listener runs in this same process, so its saved pointers show up here immediately. */
     private val preferenceWatcher =
         SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
             if (key == ToneStore.KEY_STATE) state = store.load()
@@ -65,15 +71,20 @@ class MainActivity : ComponentActivity() {
             RoToneTheme {
                 RotationScreen(
                     state = state,
+                    scope = scope,
                     accessGranted = accessGranted,
                     notice = notice,
                     onDismissNotice = { notice = null },
                     onToggleEnabled = { save(state.copy(enabled = it)) },
-                    onModeChange = { save(state.copy(mode = it)) },
+                    onSelectScope = { scope = it },
+                    onAddApp = ::addApp,
+                    onRemoveApp = ::removeApp,
+                    onToggleApp = ::toggleApp,
+                    onModeChange = { mode -> updateScoped { it.copy(mode = mode) } },
                     onMove = ::move,
-                    onRemove = ::remove,
+                    onRemoveTone = ::removeTone,
                     onPreview = { player.play(store.fileFor(it)) },
-                    onResetPointer = { save(state.copy(nextIndex = 0, lastPlayedIndex = -1)) },
+                    onResetPointer = { updateScoped { it.copy(nextIndex = 0, lastPlayedIndex = -1) } },
                     onOpenAccessSettings = ::openAccessSettings,
                     onPickSystemSound = ::pickSystemSound,
                     onPickFile = ::pickAudioFile,
@@ -87,6 +98,7 @@ class MainActivity : ComponentActivity() {
         store.preferences.registerOnSharedPreferenceChangeListener(preferenceWatcher)
         state = store.load()
         accessGranted = hasNotificationAccess()
+        if (scope != null && state.apps.none { it.packageName == scope }) scope = null
     }
 
     override fun onStop() {
@@ -105,24 +117,71 @@ class MainActivity : ComponentActivity() {
         state = updated
     }
 
+    private fun currentRotation(): ToneList {
+        val packageName = scope ?: return state.fallback
+        return state.apps.firstOrNull { it.packageName == packageName }?.rotation ?: state.fallback
+    }
+
+    /** Applies [transform] to the rotation of the currently selected scope. */
+    private fun updateScoped(transform: (ToneList) -> ToneList) {
+        val packageName = scope
+        if (packageName == null || state.apps.none { it.packageName == packageName }) {
+            save(state.copy(fallback = transform(state.fallback)))
+            return
+        }
+        save(
+            state.copy(
+                apps = state.apps.map {
+                    if (it.packageName == packageName) it.copy(rotation = transform(it.rotation)) else it
+                },
+            ),
+        )
+    }
+
+    private fun addApp(candidate: KnownPackage) {
+        if (state.apps.any { it.packageName == candidate.packageName }) {
+            scope = candidate.packageName
+            return
+        }
+        save(state.copy(apps = state.apps + AppRule(candidate.packageName, candidate.label)))
+        scope = candidate.packageName
+    }
+
+    private fun removeApp(packageName: String) {
+        save(state.copy(apps = state.apps.filterNot { it.packageName == packageName }))
+        if (scope == packageName) scope = null
+    }
+
+    private fun toggleApp(packageName: String, enabled: Boolean) {
+        save(
+            state.copy(
+                apps = state.apps.map {
+                    if (it.packageName == packageName) it.copy(enabled = enabled) else it
+                },
+            ),
+        )
+    }
+
     private fun move(index: Int, delta: Int) {
-        val tones = state.tones.toMutableList()
+        val tones = currentRotation().tones.toMutableList()
         val target = index + delta
         if (index !in tones.indices || target !in tones.indices) return
         val moving = tones[index]
         tones[index] = tones[target]
         tones[target] = moving
-        save(state.copy(tones = tones))
+        updateScoped { it.copy(tones = tones) }
     }
 
-    private fun remove(tone: Tone) {
-        val index = state.tones.indexOfFirst { it.id == tone.id }
+    private fun removeTone(tone: Tone) {
+        val rotation = currentRotation()
+        val index = rotation.tones.indexOfFirst { it.id == tone.id }
         if (index < 0) return
-        val tones = state.tones.toMutableList().apply { removeAt(index) }
-        var next = state.nextIndex
+
+        val tones = rotation.tones.toMutableList().apply { removeAt(index) }
+        var next = rotation.nextIndex
         if (index < next) next -= 1
         next = if (tones.isEmpty()) 0 else next.mod(tones.size)
-        var lastPlayed = state.lastPlayedIndex
+        var lastPlayed = rotation.lastPlayedIndex
         lastPlayed = when {
             tones.isEmpty() -> -1
             index == lastPlayed -> -1
@@ -130,7 +189,7 @@ class MainActivity : ComponentActivity() {
             else -> lastPlayed
         }
         store.deleteFile(tone)
-        save(state.copy(tones = tones, nextIndex = next, lastPlayedIndex = lastPlayed))
+        updateScoped { it.copy(tones = tones, nextIndex = next, lastPlayedIndex = lastPlayed) }
     }
 
     private fun importSound(uri: Uri) {
@@ -140,7 +199,7 @@ class MainActivity : ComponentActivity() {
                 if (tone == null) {
                     notice = "That sound could not be added."
                 } else {
-                    save(state.copy(tones = state.tones + tone))
+                    updateScoped { it.copy(tones = it.tones + tone) }
                     notice = "Added ${tone.name}"
                 }
             }

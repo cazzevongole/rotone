@@ -7,10 +7,11 @@ import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import cazzevongole.rotone.audio.TonePlayer
 import cazzevongole.rotone.data.Rotation
+import cazzevongole.rotone.data.RotationState
 import cazzevongole.rotone.data.ToneStore
 
 /**
- * Advances the rotation whenever a notification is posted.
+ * Advances the rotation that belongs to the app that posted the notification.
  *
  * Android gives no API to change another app's notification sound, so RoTone plays the tone
  * itself and the other apps' channels are expected to be silent.
@@ -44,8 +45,20 @@ class RotationListener : NotificationListenerService() {
         val notification = statusBarNotification.notification ?: return
         if (statusBarNotification.packageName == packageName) return
         if (!shouldRotate(statusBarNotification, notification)) return
+
+        var current = store.load()
+        val remembered = Rotation.recordKnown(
+            state = current,
+            packageName = statusBarNotification.packageName,
+            label = appLabel(statusBarNotification.packageName),
+        )
+        if (remembered != current) {
+            store.save(remembered)
+            current = remembered
+        }
+
         if (!isAudible()) return
-        playNext()
+        playNext(current, statusBarNotification.packageName)
     }
 
     /**
@@ -81,28 +94,29 @@ class RotationListener : NotificationListenerService() {
         }.getOrDefault(true)
     }
 
-    private fun playNext() {
-        val current = store.load()
-        val size = current.tones.size
-        if (!current.enabled || size == 0) return
+    private fun appLabel(packageName: String): String = runCatching {
+        val info = packageManager.getApplicationInfo(packageName, 0)
+        packageManager.getApplicationLabel(info).toString()
+    }.getOrDefault(packageName)
+
+    private fun playNext(current: RotationState, packageName: String) {
+        if (!current.enabled) return
+        val rotation = current.rotationFor(packageName) ?: return
+        val size = rotation.tones.size
+        if (size == 0) return
 
         val now = System.currentTimeMillis()
         if (now - lastPlayedAt < BURST_WINDOW_MS || player.isPlaying()) return
 
         val index = Rotation.pick(
-            mode = current.mode,
-            pointer = current.nextIndex,
+            mode = rotation.mode,
+            pointer = rotation.nextIndex,
             size = size,
-            lastPlayed = current.lastPlayedIndex,
+            lastPlayed = rotation.lastPlayedIndex,
         )
-        if (!player.play(store.fileFor(current.tones[index]))) return
+        if (!player.play(store.fileFor(rotation.tones[index]))) return
 
         lastPlayedAt = now
-        store.save(
-            current.copy(
-                nextIndex = Rotation.advance(index, size),
-                lastPlayedIndex = index,
-            ),
-        )
+        store.save(Rotation.recordPlayed(current, packageName, index))
     }
 }

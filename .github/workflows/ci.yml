@@ -105,12 +105,15 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
           TAG: ${{ steps.version.outputs.tag }}
         run: |
+          APK="rotone-v${VERSION}.apk"
+          cp dist/app-debug.apk "dist/${APK}"
           ls -l dist
-          NOTES="Debug build of RoTone ${VERSION} from ${GITHUB_SHA}. Install with: adb install -r app-debug.apk, then grant notification access and set the apps you cover to Silent. See the README for the full setup."
+          NOTES="Debug build of RoTone ${VERSION} from ${GITHUB_SHA}. Install with: adb install -r ${APK}, then grant notification access and set the apps you cover to Silent. See the README for the full setup."
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release edit "$TAG" --title "RoTone ${VERSION}" --notes "$NOTES"
+            gh release delete-asset "$TAG" app-debug.apk --yes >/dev/null 2>&1 || true
           else
             gh release create "$TAG" --target "$GITHUB_SHA" --title "RoTone ${VERSION}" --notes "$NOTES"
           fi
-          gh release upload "$TAG" dist/app-debug.apk --clobber
+          gh release upload "$TAG" "dist/${APK}" --clobber
           echo "Published: $(gh release view "$TAG" --json url -q .url)" >> "$GITHUB_STEP_SUMMARY"

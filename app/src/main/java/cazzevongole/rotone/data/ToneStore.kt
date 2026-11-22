@@ -9,28 +9,8 @@ import android.webkit.MimeTypeMap
 import java.io.File
 import java.util.UUID
 
-enum class PlayMode { IN_ORDER, SHUFFLE }
-
-data class Tone(
-    val id: String,
-    val name: String,
-    val fileName: String,
-)
-
-data class RotationState(
-    val tones: List<Tone> = emptyList(),
-    val mode: PlayMode = PlayMode.IN_ORDER,
-    val nextIndex: Int = 0,
-    val enabled: Boolean = true,
-    val lastPlayedIndex: Int = -1,
-) {
-    /** The tone the next notification will play, or null when the list is empty. */
-    val nextTone: Tone?
-        get() = if (tones.isEmpty()) null else tones.getOrNull(nextIndex.mod(tones.size))
-}
-
 /**
- * Persists the rotation (order, mode, pointer) and owns the audio files.
+ * Persists the rotation (order, mode, pointers, per-app rules) and owns the audio files.
  *
  * Picked sounds are copied into app storage on import so playback keeps working after the
  * picker's temporary read permission expires or the original file is moved.

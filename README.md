@@ -10,6 +10,9 @@ the order you want (or switch to shuffle), and every time a notification plays R
 next tone and moves the pointer on, looping back to the first at the end. No more hearing the same
 blip for the whole day.
 
+Rotations can be global or **per app**: give your chat app its own list, switch rotation off for the
+bank, and let everything else share the default rotation — each list keeps its own pointer.
+
 | | |
 | --- | --- |
 | Package | `cazzevongole.rotone` |
@@ -65,7 +68,7 @@ Every green push to `main` publishes the APK to the
 [Releases](https://github.com/cazzevongole/rotone/releases/latest) page, so this link always points
 at the newest build:
 
-1. Open the latest release and download **`app-debug.apk`**.
+1. Open the latest release and download **`rotone-v1.1.apk`** (the file name carries the version).
 2. Open it on the phone and allow "install unknown apps" for the app you opened it from when Android
    asks.
 
@@ -77,7 +80,7 @@ from.
 With the phone connected and USB debugging enabled:
 
 ```bash
-adb install -r app-debug.apk
+adb install -r rotone-v1.1.apk
 adb shell am start -n cazzevongole.rotone/.MainActivity
 ```
 
@@ -104,12 +107,38 @@ adb shell cmd notification allow_listener \
 2. **Arrange them** — the up and down arrows next to each row. The order is the playback order.
 3. **Choose a mode** — *In order* for a fixed cycle, *Shuffle* for a random tone each time (it will
    not repeat the tone that just played). Both loop forever.
-4. **Silence the apps you want RoTone to cover** — in each app's notification settings, or in
+4. **Pick who a list applies to** — the **ROTATION FOR** card at the top names the scope: *All other
+   apps* (the default list) or one specific app. **Change** switches between them or adds an app.
+5. **Silence the apps you want RoTone to cover** — in each app's notification settings, or in
    Android's, set the channel to Silent.
-5. Send yourself a notification and watch the highlighted row move down the list.
+6. Send yourself a notification and watch the highlighted row move down the list.
 
 Silent and vibrate modes, and Do Not Disturb, are respected: when they are on, no tone plays and the
 pointer does not move.
+
+## Per-app rotation
+
+Every app can have its own sounds, its own *In order* / *Shuffle* mode and its own pointer:
+
+| App state | What sounds |
+| --- | --- |
+| No rule (not listed) | the default rotation (*All other apps*) |
+| Rule with its own sounds | only that app's list, advancing independently |
+| Rule with no sounds yet | the default rotation, so nothing breaks while you set it up |
+| Rule switched off | nothing from RoTone — that app keeps its own notification sound |
+
+To set one up:
+
+1. **Change → Add app** on the **ROTATION FOR** card.
+2. Pick the app from the list. RoTone learns apps from the notifications they post, so the list
+   fills itself in as you use the phone — no permission to list your installed apps is needed.
+3. Add sounds for that scope with **System sound** / **Audio file**; the list, order and mode are
+   saved per app.
+4. Use the switch next to the app in **Per-app rotations** to turn its rotation on or off, or the
+   bin icon to delete the rule and fall back to the default list.
+
+The **Per-app rotations** card lists every configured app with its state (`3 sounds of its own`,
+`follows the default list`, `off`), and tapping a row jumps to that app's rotation.
 
 ## Build it yourself
 
@@ -168,8 +197,9 @@ JVM unit tests, no device or emulator needed:
 | Test class | Covers |
 | --- | --- |
 | `RotationTest` | In-order walking and wrapping, stale pointers, advance/loop, empty rotation, shuffle range and no-repeat behaviour, single-sound rotation |
-| `RotationJsonTest` | Persistence round trip, missing and corrupt JSON, pointer wrapping, negative pointers, entries without an audio file, unknown mode, default `enabled` |
-| `RotationStateTest` | `nextTone` on an empty list (regression test for the first-launch crash) and pointer wrapping |
+| `RotationJsonTest` | Round trip of fallback, per-app rules and known apps, migration from the version 1 single-list format, missing and corrupt JSON, pointer wrapping, entries without an audio file, unknown mode, rules without a package |
+| `RotationStateTest` | Scope resolution (default list, app override, app without sounds, app switched off), `nextTone` on an empty list (regression test for the first-launch crash), pointer wrapping |
+| `RotationOpsTest` | Pointer advance and looping per scope, silent apps recording nothing, known-app tracking (dedupe, ordering, cap of 50) |
 
 HTML reports: `app/build/reports/tests/testDebugUnitTest/index.html`.
 
@@ -186,7 +216,7 @@ jobs:
 | --- | --- | --- |
 | **Unit tests** | `./gradlew testDebugUnitTest`, uploads the HTML report | — |
 | **Build debug APK** | `./gradlew assembleDebug`, uploads `rotone-debug-apk` | tests pass |
-| **Publish APK to Releases** | downloads the APK and attaches it to the `v<versionName>` release, creating it on the first run and updating it afterwards | build passes |
+| **Publish APK to Releases** | downloads the APK, renames it to `rotone-v<versionName>.apk` and attaches it to the `v<versionName>` release, creating it on the first run and updating it afterwards | build passes |
 
 A failing test therefore stops the build before it starts, and a failing build means no release is
 published. The release job has a write-scoped `GITHUB_TOKEN`; the other two are read-only. Because
@@ -205,6 +235,12 @@ TonePlayer (MediaPlayer, USAGE_NOTIFICATION)  →  speaker
         ▼
 ToneStore (SharedPreferences JSON + files in filesDir/tones)  →  nextIndex, lastPlayedIndex
 ```
+
+**Per-app routing** — each notification is resolved with `RotationState.rotationFor(packageName)`: an
+app with its own sounds uses them, an app without sounds follows the fallback list, and an app
+switched off produces no tone at all. The listener also records every app that posts a notification
+(`Rotation.recordKnown`) so the app can be offered in the picker without asking for package
+visibility.
 
 **Notification filters** — the listener ignores its own notifications (so previews do not advance
 the rotation), group summaries, ongoing and foreground-service notifications, local-only ones, and
@@ -226,9 +262,10 @@ app/src/main/java/cazzevongole/rotone/
 ├── MainActivity.kt               composition root: state, pickers, persistence glue
 ├── audio/TonePlayer.kt           MediaPlayer wrapper on the notification stream
 ├── data/
-│   ├── ToneStore.kt              Tone / PlayMode / RotationState models + files and SharedPreferences
-│   ├── Rotation.kt               pure play-order logic (tested)
-│   └── RotationJson.kt           pure persistence format (tested)
+│   ├── Models.kt                 Tone, ToneList, AppRule, RotationState (+ scope resolution)
+│   ├── ToneStore.kt              files and SharedPreferences
+│   ├── Rotation.kt               pure play-order and pointer logic (tested)
+│   └── RotationJson.kt           pure persistence format with v1 migration (tested)
 ├── service/RotationListener.kt   NotificationListenerService that advances the rotation
 └── ui/
     ├── RotationScreen.kt         the whole screen in Compose
@@ -255,8 +292,5 @@ docs/                                         screenshots used above
 
 ## Not included
 
-- The rotation is **global**: one list, one pointer, every notification that reaches the listener.
-  Per-app rotation is not implemented — the notification's originating package would have to be
-  matched against per-app lists, which the listener already receives as `sbn.packageName`.
 - The app does not modify other apps' sounds, does not post its own notifications, has no network
   permission, and stores nothing outside its own private folder.
