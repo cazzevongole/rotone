@@ -21,6 +21,7 @@ bank, and let everything else share the default rotation — each list keeps its
 | Permissions | Notification access only — no network, no accounts, no analytics |
 | Languages | English and Italian, following the system language |
 | Size | ~1 MB signed release APK |
+| License | GPL-3.0-or-later — free software |
 
 ## Screenshots
 
@@ -98,6 +99,16 @@ adb shell am start -n cazzevongole.rotone/.MainActivity
 Any build from the [Actions](https://github.com/cazzevongole/rotone/actions) tab works here too: the
 **rotone-release-apk** artifact of a run is the same signed file that gets released, and
 `./gradlew assembleDebug` gives you a locally-signed debug build for development.
+
+### Option C — F-Droid
+
+RoTone is prepared for the [F-Droid](https://f-droid.org) main repository (see [F-Droid](#f-droid)
+below) but is not listed there yet. Once the submission is merged, this link will install it:
+
+<https://f-droid.org/packages/cazzevongole.rotone/>
+
+F-Droid signs the builds it publishes with its own key, so an F-Droid install and a GitHub APK are
+separate installs — pick one.
 
 ### Then grant notification access
 
@@ -262,6 +273,65 @@ published. The release job has a write-scoped `GITHUB_TOKEN`; the other two are 
 the tag is derived from `versionName` (`1.2` today), pushes to `main` update the same release until
 the version in `app/build.gradle.kts` changes.
 
+## F-Droid
+
+RoTone is ready for the [F-Droid](https://f-droid.org) main repository and meets its
+[inclusion policy](https://f-droid.org/en/docs/Inclusion_Policy):
+
+| Requirement | Status |
+| --- | --- |
+| Free software license | `GPL-3.0-or-later` in [`LICENSE`](LICENSE), plus an SPDX header in every source file |
+| Free dependencies | AndroidX, Compose, Material and Kotlin only (Apache 2.0); no Play Services, Firebase, ads, analytics or crash reporting |
+| Buildable from source | `./gradlew assembleRelease` on JDK 17 and SDK 35, no proprietary IDE, no prebuilt jars |
+| No tracking | The app has no `INTERNET` permission at all |
+| Anti-features | None |
+| Listing metadata | `fastlane/metadata/android/en-US` and `it-IT`: title, short and full description, screenshots, changelog for version code 3 |
+| Build recipe | [`fdroid/metadata/cazzevongole.rotone.yml`](fdroid/metadata/cazzevongole.rotone.yml) |
+
+To submit it, copy that recipe into the
+[fdroiddata](https://gitlab.com/fdroid/fdroiddata) repository (the file name is the application id)
+and open a merge request labelled *New App*:
+
+```bash
+git clone https://gitlab.com/fdroid/fdroiddata.git && cd fdroiddata
+cp /path/to/rotone/fdroid/metadata/cazzevongole.rotone.yml metadata/
+
+# Optional local checks, if fdroidserver is installed
+fdroid readmeta && fdroid rewritemeta cazzevongole.rotone && fdroid lint cazzevongole.rotone
+
+git checkout -b cazzevongole.rotone
+git add metadata/cazzevongole.rotone.yml
+git commit -m "New App: cazzevongole.rotone"
+git push origin cazzevongole.rotone
+```
+
+The GitLab pipeline builds the APK from the recorded commit, so a failing build shows up there
+before a packager looks at the merge request. After inclusion, F-Droid follows the `v<versionName>`
+tags (`UpdateCheckMode: Tags`): bump `versionCode`/`versionName`, tag the release, and the next build
+is proposed automatically.
+
+F-Droid builds and **signs every APK with its own key**, so its build and the GitHub release APK
+cannot update each other — a phone should stick to one source. It also means the release keystore in
+the GitHub secrets is only used for the GitHub builds, not for F-Droid.
+
+Reproducible builds would let F-Droid publish this repository's signed APK instead of its own; that
+needs the build to be byte-identical on the build server and is not set up here, so F-Droid ships its
+own signature.
+
+## License
+
+RoTone is free software: you can redistribute it and/or modify it under the terms of the **GNU
+General Public License, version 3 or later**, as published by the Free Software Foundation. The full
+text is in [`LICENSE`](LICENSE).
+
+Every source file starts with `SPDX-License-Identifier: GPL-3.0-or-later` and the copyright line, so
+the license is visible per file. The launcher icon is a vector drawn for this project and is covered
+by the same license; Compose, AndroidX and the Material components are Apache 2.0, and JUnit (tests
+only) is under the Eclipse Public License 1.0.
+
+As the GPL states, there is no warranty — the app plays with your notification sounds, so use it at
+your own risk.
+
 ## How it works
 
 ```
@@ -313,6 +383,9 @@ app/src/main/res/values/                      English UI strings
 app/src/main/res/values-it/                   Italian UI strings
 app/src/test/java/cazzevongole/rotone/data/   JVM unit tests
 docs/                                         screenshots used above
+fastlane/metadata/android/{en-US,it-IT}/      F-Droid listing: title, descriptions, screenshots, changelogs
+fdroid/metadata/cazzevongole.rotone.yml       F-Droid build recipe, ready for an fdroiddata merge request
+LICENSE                                       GNU GPL v3 text
 .github/workflows/ci.yml                      tests, build, release
 ```
 

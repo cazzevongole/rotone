@@ -1,0 +1,1 @@
+Ruota il suono delle notifiche, globale o per app

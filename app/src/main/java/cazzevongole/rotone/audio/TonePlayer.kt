@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 cazzevongole
+
 package cazzevongole.rotone.audio
 
 import android.content.Context

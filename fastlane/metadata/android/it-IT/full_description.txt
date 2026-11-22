@@ -1,0 +1,27 @@
+RoTone ruota il suono che il telefono usa per le notifiche.
+
+Metti in una lista tutti i suoni di notifica che vuoi — o i tuoi file audio — scegli l'ordine (o passa a casuale) e, a ogni notifica, RoTone suona il tono successivo e sposta il puntatore, tornando al primo alla fine.
+
+La rotazione può essere globale o per app: dai alla chat la sua lista, disattiva la rotazione per la banca e lascia che tutto il resto usi la rotazione predefinita — ogni lista mantiene il proprio puntatore.
+
+Come funziona
+
+Android non permette a un'app di cambiare il suono delle notifiche di un'altra. RoTone lavora insieme al sistema:
+
+1. Gli concedi l'accesso alle notifiche, così vede quando ne arriva una.
+2. Quando ne arriva una, RoTone suona da sé il tono successivo della rotazione, sul canale audio delle notifiche, così valgono il volume delle notifiche e la modalità silenziosa.
+3. Per sentire solo RoTone, imposta una volta le app che ti interessano su Silenzioso, nelle loro impostazioni delle notifiche — altrimenti il loro suono si sovrappone al tono che ruota.
+
+Quest'ultimo è l'unico passaggio manuale, e va fatto una volta sola per ogni app.
+
+Funzioni
+
+* Rotazione in ordine e casuale, entrambe in ciclo infinito
+* Rotazioni per app, ognuna con lista, modalità e puntatore propri
+* Importa qualsiasi suoneria di sistema o file audio; i toni vengono copiati nell'app e continuano a funzionare
+* Interruttore di pausa, pulsante di riavvio e anteprima su ogni riga
+* Silenzioso, vibrazione e Non disturbare vengono rispettati
+* Inglese e italiano, in base alla lingua di sistema
+* Nessun permesso di rete, nessuna pubblicità, nessun tracciamento, nessun account
+
+RoTone è software libero con licenza GNU GPL v3 o successiva. Il codice è su https://github.com/cazzevongole/rotone

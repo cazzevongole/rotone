@@ -1,0 +1,27 @@
+RoTone rotates the sound your phone plays for notifications.
+
+Put any number of notification ringtones — or your own audio files — into a list, arrange them in the order you want (or switch to shuffle), and every time a notification plays RoTone sounds the next tone and moves the pointer on, looping back to the first at the end.
+
+Rotations can be global or per app: give your chat app its own list, switch rotation off for the bank, and let everything else share the default rotation — each list keeps its own pointer.
+
+How it works
+
+Android does not let one app change another app's notification sound. RoTone works with the platform instead:
+
+1. You grant it notification access, so it can see when a notification is posted.
+2. When one arrives, RoTone plays the next tone in your rotation itself, on the notification audio stream, so the notification volume and silent mode apply.
+3. To hear only RoTone, set the apps you care about to Silent once, in their own notification settings — otherwise their normal sound plays on top of the rotating tone.
+
+That third step is the only manual setup, and it is a one-time job per app.
+
+Features
+
+* In-order and shuffle rotation, both looping forever
+* Per-app rotations, each with its own list, mode and pointer
+* Import any system ringtone or any audio file; tones are copied into the app so they keep working
+* Pause switch, restart button and a preview on every row
+* Silent, vibrate and Do Not Disturb are respected
+* English and Italian, following the system language
+* No internet permission, no ads, no tracking, no accounts
+
+RoTone is free software under the GNU GPL v3 or later. The source code is at https://github.com/cazzevongole/rotone

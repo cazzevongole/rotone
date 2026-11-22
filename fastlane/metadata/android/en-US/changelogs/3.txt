@@ -1,0 +1,3 @@
+* Italian translation, loaded from the system language
+* Android 13 and newer can set RoTone's language on its own (App info → Language)
+* Counts such as "3 sounds" use the correct singular and plural forms in both languages

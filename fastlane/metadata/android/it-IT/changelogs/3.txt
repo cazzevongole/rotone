@@ -1,0 +1,3 @@
+* Traduzione italiana, caricata dalla lingua di sistema
+* Da Android 13 la lingua si può impostare solo per RoTone (Info app → Lingua)
+* I conteggi come "3 suoni" usano singolare e plurale corretti in entrambe le lingue
