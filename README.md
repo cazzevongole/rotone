@@ -20,7 +20,7 @@ bank, and let everything else share the default rotation — each list keeps its
 | Built with | Kotlin, Jetpack Compose (Material 3) |
 | Permissions | Notification access only — no network, no accounts, no analytics |
 | Languages | English and Italian, following the system language |
-| Size | ~9.5 MB debug APK |
+| Size | ~1 MB signed release APK |
 
 ## Screenshots
 
@@ -77,8 +77,14 @@ at the newest build:
 2. Open it on the phone and allow "install unknown apps" for the app you opened it from when Android
    asks.
 
-The release is rebuilt from `main` on each push, and the release notes record the commit it came
-from.
+The APK is a signed release build (R8-shrunk, signed with RoTone's own release key stored as a GitHub
+secret), so it installs like any sideloaded app and updates cleanly over earlier release builds. The
+release is rebuilt from `main` on each push, and the release notes record the commit it came from.
+
+> **Coming from a debug build** (anything from the old `rotone-debug-apk` artifact, or a local
+> `assembleDebug` install): uninstall RoTone once first, because Android refuses updates signed with a
+> different key. Your tones and rotations are lost — re-add them, or export nothing: the app stores
+> them in its private folder, which an uninstall clears.
 
 ### Option B — install over USB with adb
 
@@ -90,7 +96,8 @@ adb shell am start -n cazzevongole.rotone/.MainActivity
 ```
 
 Any build from the [Actions](https://github.com/cazzevongole/rotone/actions) tab works here too: the
-**rotone-debug-apk** artifact of a run is the same file that gets released.
+**rotone-release-apk** artifact of a run is the same signed file that gets released, and
+`./gradlew assembleDebug` gives you a locally-signed debug build for development.
 
 ### Then grant notification access
 
@@ -181,15 +188,42 @@ needs escaped backslashes, e.g. `sdk.dir=C\:\\Users\\you\\AppData\\Local\\Androi
 
 ### Release build
 
-```bash
-./gradlew assembleRelease
+R8 code shrinking and resource shrinking are enabled. The APK is signed when a keystore is
+configured, and left unsigned (`app-release-unsigned.apk`) otherwise, so a fresh clone still builds.
+
+Signing is read from two places, in this order:
+
+1. **Environment variables** — `ROTONE_KEYSTORE_FILE`, `ROTONE_KEYSTORE_PASSWORD`, `ROTONE_KEY_ALIAS`,
+   `ROTONE_KEY_PASSWORD`. This is what CI uses.
+2. **`keystore.properties`** in the repository root (git-ignored), for local release builds:
+
+```properties
+storeFile=keystore/rotone-release.jks
+storePassword=…
+keyAlias=rotone
+keyPassword=…
 ```
 
-R8 code shrinking and resource shrinking are enabled, so the result in
-`app/build/outputs/apk/release/app-release-unsigned.apk` is unsigned. Sign it with your own keystore
-via `apksigner` (or add a `signingConfig`) before installing it. The released APK on the Releases
-page is the signed-by-debug-key CI build, which installs directly but cannot be uploaded through the
-Play Store.
+Then `./gradlew assembleRelease` produces a signed
+`app/build/outputs/apk/release/app-release.apk`, and `apksigner verify --print-certs` shows
+`CN=RoTone, O=cazzevongole, C=IT`.
+
+#### Keys in CI
+
+The workflow reads four repository secrets, set once with `gh secret set`:
+
+| Secret | Value |
+| --- | --- |
+| `ROTONE_KEYSTORE_BASE64` | `base64 -w0 keystore/rotone-release.jks` |
+| `ROTONE_KEYSTORE_PASSWORD` | the keystore password |
+| `ROTONE_KEY_ALIAS` | `rotone` |
+| `ROTONE_KEY_PASSWORD` | the key password |
+
+The keystore itself, `keystore.properties` and every `*.jks`/`*.keystore` file are git-ignored, and
+the decoded keystore lives only in the runner's temp directory, so no key material is ever committed
+or printed. Keep a backup of `keystore/rotone-release.jks` and its passwords: losing them means the
+next release cannot update the current installs (Android only upgrades an app when the signing key is
+unchanged).
 
 ## Tests
 
@@ -220,8 +254,8 @@ jobs:
 | Job | What it does | Runs after |
 | --- | --- | --- |
 | **Unit tests** | `./gradlew testDebugUnitTest`, uploads the HTML report | — |
-| **Build debug APK** | `./gradlew assembleDebug`, uploads `rotone-debug-apk` | tests pass |
-| **Publish APK to Releases** | downloads the APK, renames it to `rotone-v<versionName>.apk` and attaches it to the `v<versionName>` release, creating it on the first run and updating it afterwards | build passes |
+| **Build signed release APK** | decodes the keystore from the `ROTONE_KEYSTORE_BASE64` secret, runs `./gradlew assembleRelease` with the signing secrets, verifies the signature with `apksigner verify --print-certs`, uploads `rotone-release-apk` | tests pass |
+| **Publish APK to Releases** | downloads that APK, renames it to `rotone-v<versionName>.apk` and attaches it to the `v<versionName>` release, creating it on the first run and updating it afterwards | build passes |
 
 A failing test therefore stops the build before it starts, and a failing build means no release is
 published. The release job has a write-scoped `GITHUB_TOKEN`; the other two are read-only. Because
@@ -294,7 +328,10 @@ docs/                                         screenshots used above
 - **Rotation stops after a while.** Some vendors (Samsung, Xiaomi, Huawei) aggressively kill
   background apps; exclude RoTone from battery optimisation if the listener stops receiving
   notifications.
-- **Play Store-style warnings on install.** The released APK is built by CI with the debug key and
+- **"App not installed" when updating.** The installed copy was signed with a different key (an old
+  debug build, or the APK was rebuilt locally with another keystore). Uninstall RoTone, then install
+  the release again.
+- **Play Store-style warnings on install.** The released APK is signed by CI with RoTone's own key and
   is not from a store; sideloading always shows the "unknown app" prompt.
 
 ## Not included

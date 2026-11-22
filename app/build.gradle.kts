@@ -1,8 +1,25 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
 }
+
+// Release signing: environment variables win (CI), then the git-ignored
+// keystore.properties next to this build (local builds). Neither is committed.
+val signingProperties = Properties().apply {
+    val file = rootProject.file("keystore.properties")
+    if (file.isFile) file.inputStream().use(::load)
+}
+
+fun signingSetting(environment: String, property: String): String? =
+    System.getenv(environment)?.takeIf { it.isNotBlank() }
+        ?: signingProperties.getProperty(property)?.takeIf { it.isNotBlank() }
+
+val releaseKeystore = signingSetting("ROTONE_KEYSTORE_FILE", "storeFile")
+    ?.let { rootProject.file(it) }
+    ?.takeIf { it.isFile }
 
 android {
     namespace = "cazzevongole.rotone"
@@ -16,6 +33,17 @@ android {
         versionName = "1.2"
     }
 
+    signingConfigs {
+        if (releaseKeystore != null) {
+            create("release") {
+                storeFile = releaseKeystore
+                storePassword = signingSetting("ROTONE_KEYSTORE_PASSWORD", "storePassword")
+                keyAlias = signingSetting("ROTONE_KEY_ALIAS", "keyAlias")
+                keyPassword = signingSetting("ROTONE_KEY_PASSWORD", "keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
@@ -24,6 +52,8 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+            // Unsigned when no keystore is configured, so a fresh clone can still build.
+            signingConfig = signingConfigs.findByName("release")
         }
     }
 
