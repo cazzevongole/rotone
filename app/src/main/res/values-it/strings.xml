@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">RoTone</string>
+
+    <!-- Status line under the title -->
+    <string name="status_paused">In pausa</string>
+    <string name="status_off_for">Disattivato per %1$s</string>
+    <string name="status_no_sounds_for">Ancora nessun suono per %1$s</string>
+    <string name="status_add_sounds">Aggiungi dei suoni per iniziare la rotazione</string>
+    <plurals name="status_shuffling">
+        <item quantity="one">Mescolo %1$d suono</item>
+        <item quantity="many">Mescolo %1$d suoni</item>
+        <item quantity="other">Mescolo %1$d suoni</item>
+    </plurals>
+    <string name="status_next">Prossimo: %1$s</string>
+
+    <!-- Scope card and dialog -->
+    <string name="label_rotation_for">ROTAZIONE PER</string>
+    <string name="scope_all_apps">Tutte le altre app</string>
+    <string name="scope_default_list">la lista predefinita</string>
+    <string name="dialog_scope_title">Rotazione per</string>
+    <string name="action_change">Cambia</string>
+    <string name="label_rotate_this_app">Ruota le notifiche di questa app</string>
+    <string name="scope_follows_default">Nessun suono proprio: segue la lista predefinita</string>
+    <plurals name="scope_app_sounds">
+        <item quantity="one">%1$d suono solo per questa app</item>
+        <item quantity="many">%1$d suoni solo per questa app</item>
+        <item quantity="other">%1$d suoni solo per questa app</item>
+    </plurals>
+
+    <!-- Rotation card -->
+    <string name="mode_in_order">In ordine</string>
+    <string name="mode_shuffle">Casuale</string>
+    <string name="label_plays_next">PROSSIMO</string>
+    <string name="no_sounds_yet">Ancora nessun suono</string>
+    <string name="action_restart">Ricomincia</string>
+
+    <!-- Sounds list -->
+    <string name="section_sounds">Suoni</string>
+    <string name="sounds_none">nessuno</string>
+    <string name="sounds_in_rotation">%1$d in rotazione</string>
+    <string name="empty_title">Nessun suono in questa rotazione</string>
+    <string name="empty_body_app">Aggiungi dei suoni qui sotto per dare a questa app una lista propria, oppure lasciala vuota per seguire quella predefinita.</string>
+    <string name="empty_body_default">Aggiungi qui sotto suonerie di notifica o i tuoi file audio.</string>
+    <string name="row_plays_next">tocca a lui</string>
+    <string name="cd_preview">Ascolta %1$s</string>
+    <string name="cd_move_up">Sposta su</string>
+    <string name="cd_move_down">Sposta giù</string>
+    <string name="cd_remove_tone">Rimuovi %1$s</string>
+    <string name="action_system_sound">Suoneria di sistema</string>
+    <string name="action_audio_file">File audio</string>
+
+    <!-- Per-app list -->
+    <string name="title_per_app">Rotazioni per app</string>
+    <string name="per_app_empty">Nessuna lista per app. Usa Cambia qui sopra per dare a un\'app i suoi suoni o per disattivare la rotazione solo per lei. RoTone impara le app dalle loro notifiche: non c\'è niente da digitare.</string>
+    <string name="app_state_off">spento: suona il suo suono</string>
+    <string name="app_state_follows_default">segue la lista predefinita</string>
+    <plurals name="app_row_sounds">
+        <item quantity="one">%1$d suono proprio</item>
+        <item quantity="many">%1$d suoni propri</item>
+        <item quantity="other">%1$d suoni propri</item>
+    </plurals>
+    <string name="cd_remove_app">Rimuovi %1$s</string>
+
+    <!-- Add-app dialog -->
+    <string name="dialog_add_app_title">Aggiungi un\'app</string>
+    <string name="add_app_empty">Nessuna nuova app da aggiungere. RoTone impara un\'app la prima volta che invia una notifica: aspetta che ne arrivi una e riapri questo elenco.</string>
+    <string name="action_add_app">Aggiungi app</string>
+    <string name="action_close">Chiudi</string>
+
+    <!-- Notification access card -->
+    <string name="access_title">Accesso alle notifiche disattivato</string>
+    <string name="access_body">Android permette a un\'app di reagire alle notifiche solo se lo autorizzi. Apri le impostazioni, trova RoTone nell\'elenco e attivalo.</string>
+    <string name="access_button">Apri le impostazioni di accesso</string>
+
+    <!-- How it works -->
+    <string name="title_how_it_works">Come funziona</string>
+    <string name="hint_app_scope">Questa lista appartiene a una sola app: le sue notifiche usano questi suoni e il suo puntatore avanza in modo indipendente dalla lista predefinita.</string>
+    <string name="hint_fallback_scope">Questa è la lista predefinita: la usano tutte le app senza una rotazione propria e ha un puntatore suo.</string>
+    <string name="hint_android">Android non permette a un\'app di cambiare il suono delle notifiche di un\'altra, quindi RoTone riproduce il suono da sé ogni volta che arriva una notifica.</string>
+    <string name="hint_silent">Imposta una volta le app che vuoi coprire su Silenzioso e sentirai solo il suono che ruota.</string>
+    <string name="hint_dnd">Silenzioso, vibrazione e Non disturbare restano muti: il puntatore si muove solo quando un suono parte davvero.</string>
+    <string name="hint_copies">Ogni suono scelto viene copiato nell\'app, così continua a funzionare anche se l\'originale viene eliminato.</string>
+
+    <!-- Notices and pickers -->
+    <string name="notice_sound_failed">Non è stato possibile aggiungere quel suono.</string>
+    <string name="notice_sound_added">Aggiunto %1$s</string>
+    <string name="picker_title">Scegli un suono</string>
+    <string name="notice_no_sound_picker">Nessun selettore di suonerie su questo dispositivo.</string>
+    <string name="notice_no_file_picker">Nessun selettore di file su questo dispositivo.</string>
+</resources>

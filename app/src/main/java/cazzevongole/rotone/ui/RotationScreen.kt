@@ -59,9 +59,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import cazzevongole.rotone.R
 import cazzevongole.rotone.data.AppRule
 import cazzevongole.rotone.data.KnownPackage
 import cazzevongole.rotone.data.PlayMode
@@ -94,7 +97,7 @@ fun RotationScreen(
     val snackbar = remember { SnackbarHostState() }
     val rule = scope?.let { packageName -> state.apps.firstOrNull { it.packageName == packageName } }
     val rotation = rule?.rotation ?: state.fallback
-    val scopeTitle = rule?.label ?: "All other apps"
+    val scopeTitle = rule?.label ?: stringResource(R.string.scope_all_apps)
 
     var scopeDialog by remember { mutableStateOf(false) }
     var addDialog by remember { mutableStateOf(false) }
@@ -131,7 +134,7 @@ fun RotationScreen(
                 title = {
                     Column {
                         Text(
-                            text = "RoTone",
+                            text = stringResource(R.string.app_name),
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.SemiBold,
                         )
@@ -187,13 +190,17 @@ fun RotationScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = "Sounds",
+                        text = stringResource(R.string.section_sounds),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
                     )
                     Spacer(Modifier.weight(1f))
                     Text(
-                        text = if (rotation.tones.isEmpty()) "none yet" else "${rotation.tones.size} in rotation",
+                        text = if (rotation.tones.isEmpty()) {
+                            stringResource(R.string.sounds_none)
+                        } else {
+                            stringResource(R.string.sounds_in_rotation, rotation.tones.size)
+                        },
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -235,13 +242,16 @@ fun RotationScreen(
     }
 }
 
+@Composable
 private fun statusLine(state: RotationState, rule: AppRule?, rotation: ToneList): String = when {
-    !state.enabled -> "Paused"
-    rule != null && !rule.enabled -> "Off for ${rule.label}"
-    rotation.tones.isEmpty() && rule != null -> "No sounds for ${rule.label} yet"
-    rotation.tones.isEmpty() -> "Add sounds to start rotating"
-    rotation.mode == PlayMode.SHUFFLE -> "Shuffling ${rotation.tones.size} sounds"
-    else -> "Next: ${rotation.nextTone?.name ?: "-"}"
+    !state.enabled -> stringResource(R.string.status_paused)
+    rule != null && !rule.enabled -> stringResource(R.string.status_off_for, rule.label)
+    rotation.tones.isEmpty() && rule != null ->
+        stringResource(R.string.status_no_sounds_for, rule.label)
+    rotation.tones.isEmpty() -> stringResource(R.string.status_add_sounds)
+    rotation.mode == PlayMode.SHUFFLE ->
+        pluralStringResource(R.plurals.status_shuffling, rotation.tones.size, rotation.tones.size)
+    else -> stringResource(R.string.status_next, rotation.nextTone?.name ?: "-")
 }
 
 @Composable
@@ -256,13 +266,12 @@ private fun AccessCard(onOpenSettings: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(
-                text = "Notification access is off",
+                text = stringResource(R.string.access_title),
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onErrorContainer,
             )
             Text(
-                text = "Android only lets an app react to notifications once you allow it. " +
-                    "Open the settings, find RoTone in the list and turn it on.",
+                text = stringResource(R.string.access_body),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onErrorContainer,
             )
@@ -273,7 +282,7 @@ private fun AccessCard(onOpenSettings: () -> Unit) {
                     contentColor = MaterialTheme.colorScheme.onError,
                 ),
             ) {
-                Text("Open access settings")
+                Text(stringResource(R.string.access_button))
             }
         }
     }
@@ -300,7 +309,7 @@ private fun ScopeCard(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text(
-                        text = "ROTATION FOR",
+                        text = stringResource(R.string.label_rotation_for),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -322,7 +331,7 @@ private fun ScopeCard(
                     }
                 }
                 TextButton(onClick = onChangeScope) {
-                    Text("Change")
+                    Text(stringResource(R.string.action_change))
                 }
             }
 
@@ -331,14 +340,18 @@ private fun ScopeCard(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
                         Text(
-                            text = "Rotate this app's notifications",
+                            text = stringResource(R.string.label_rotate_this_app),
                             style = MaterialTheme.typography.bodyMedium,
                         )
                         Text(
                             text = if (soundCount == 0) {
-                                "No sounds of its own yet, so it follows the default list"
+                                stringResource(R.string.scope_follows_default)
                             } else {
-                                "$soundCount sounds just for this app"
+                                pluralStringResource(
+                                    R.plurals.scope_app_sounds,
+                                    soundCount,
+                                    soundCount,
+                                )
                             },
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -372,25 +385,25 @@ private fun RotationCard(
                     selected = rotation.mode == PlayMode.IN_ORDER,
                     onClick = { onModeChange(PlayMode.IN_ORDER) },
                     shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
-                    label = { Text("In order") },
+                    label = { Text(stringResource(R.string.mode_in_order)) },
                 )
                 SegmentedButton(
                     selected = rotation.mode == PlayMode.SHUFFLE,
                     onClick = { onModeChange(PlayMode.SHUFFLE) },
                     shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
-                    label = { Text("Shuffle") },
+                    label = { Text(stringResource(R.string.mode_shuffle)) },
                 )
             }
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text(
-                        text = "PLAYS NEXT",
+                        text = stringResource(R.string.label_plays_next),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Text(
-                        text = rotation.nextTone?.name ?: "No sounds yet",
+                        text = rotation.nextTone?.name ?: stringResource(R.string.no_sounds_yet),
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Medium,
                         maxLines = 1,
@@ -407,7 +420,7 @@ private fun RotationCard(
                         modifier = Modifier.size(18.dp),
                     )
                     Spacer(Modifier.width(6.dp))
-                    Text("Restart")
+                    Text(stringResource(R.string.action_restart))
                 }
             }
         }
@@ -435,16 +448,14 @@ private fun EmptyCard(isAppScope: Boolean) {
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
-                text = "No sounds in this rotation",
+                text = stringResource(R.string.empty_title),
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Medium,
             )
             Text(
-                text = if (isAppScope) {
-                    "Add sounds below to give this app its own list, or leave it empty to follow the default one."
-                } else {
-                    "Add notification ringtones or your own audio files below."
-                },
+                text = stringResource(
+                    if (isAppScope) R.string.empty_body_app else R.string.empty_body_default,
+                ),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -512,16 +523,34 @@ private fun ToneRow(
                 )
                 if (isNext) {
                     Text(
-                        text = "plays next",
+                        text = stringResource(R.string.row_plays_next),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.primary,
                     )
                 }
             }
-            RowAction(Icons.Filled.PlayArrow, "Preview ${tone.name}", true, onPreview)
-            RowAction(Icons.Filled.KeyboardArrowUp, "Move up", canMoveUp) { onMove(-1) }
-            RowAction(Icons.Filled.KeyboardArrowDown, "Move down", canMoveDown) { onMove(1) }
-            RowAction(Icons.Filled.Delete, "Remove ${tone.name}", true, onRemove)
+            RowAction(
+                Icons.Filled.PlayArrow,
+                stringResource(R.string.cd_preview, tone.name),
+                true,
+                onPreview,
+            )
+            RowAction(
+                Icons.Filled.KeyboardArrowUp,
+                stringResource(R.string.cd_move_up),
+                canMoveUp,
+            ) { onMove(-1) }
+            RowAction(
+                Icons.Filled.KeyboardArrowDown,
+                stringResource(R.string.cd_move_down),
+                canMoveDown,
+            ) { onMove(1) }
+            RowAction(
+                Icons.Filled.Delete,
+                stringResource(R.string.cd_remove_tone, tone.name),
+                true,
+                onRemove,
+            )
         }
     }
 }
@@ -556,10 +585,10 @@ private fun AddButtons(onPickSystemSound: () -> Unit, onPickFile: () -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         OutlinedButton(onClick = onPickSystemSound, modifier = Modifier.weight(1f)) {
-            Text("System sound")
+            Text(stringResource(R.string.action_system_sound))
         }
         OutlinedButton(onClick = onPickFile, modifier = Modifier.weight(1f)) {
-            Text("Audio file")
+            Text(stringResource(R.string.action_audio_file))
         }
     }
 }
@@ -583,7 +612,7 @@ private fun AppsCard(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = "Per-app rotations",
+                    text = stringResource(R.string.title_per_app),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
                 )
@@ -597,9 +626,7 @@ private fun AppsCard(
 
             if (state.apps.isEmpty()) {
                 Text(
-                    text = "No app-specific lists yet. Use Change above to give an app its own " +
-                        "sounds, or switch rotation off for it. RoTone learns apps from their " +
-                        "notifications, so there is nothing to type.",
+                    text = stringResource(R.string.per_app_empty),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -627,10 +654,14 @@ private fun AppsCard(
                             )
                             Text(
                                 text = when {
-                                    !rule.enabled -> "off, its own sound plays"
-                                    rule.rotation.tones.isEmpty() -> "follows the default list"
-                                    rule.rotation.tones.size == 1 -> "1 sound of its own"
-                                    else -> "${rule.rotation.tones.size} sounds of its own"
+                                    !rule.enabled -> stringResource(R.string.app_state_off)
+                                    rule.rotation.tones.isEmpty() ->
+                                        stringResource(R.string.app_state_follows_default)
+                                    else -> pluralStringResource(
+                                        R.plurals.app_row_sounds,
+                                        rule.rotation.tones.size,
+                                        rule.rotation.tones.size,
+                                    )
                                 },
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -651,7 +682,10 @@ private fun AppsCard(
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.Delete,
-                                contentDescription = "Remove ${rule.label}",
+                                contentDescription = stringResource(
+                                    R.string.cd_remove_app,
+                                    rule.label,
+                                ),
                                 modifier = Modifier.size(20.dp),
                             )
                         }
@@ -672,7 +706,7 @@ private fun ScopeDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Rotation for") },
+        title = { Text(stringResource(R.string.dialog_scope_title)) },
         text = {
             Column(
                 Modifier
@@ -680,8 +714,8 @@ private fun ScopeDialog(
                     .verticalScroll(rememberScrollState()),
             ) {
                 ScopeOption(
-                    title = "All other apps",
-                    subtitle = "the default list",
+                    title = stringResource(R.string.scope_all_apps),
+                    subtitle = stringResource(R.string.scope_default_list),
                     selected = scope == null,
                     onClick = {
                         onSelect(null)
@@ -708,12 +742,12 @@ private fun ScopeDialog(
                     onAddApp()
                 },
             ) {
-                Text("Add app")
+                Text(stringResource(R.string.action_add_app))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Close")
+                Text(stringResource(R.string.action_close))
             }
         },
     )
@@ -762,12 +796,11 @@ private fun AddAppDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Add an app") },
+        title = { Text(stringResource(R.string.dialog_add_app_title)) },
         text = {
             if (candidates.isEmpty()) {
                 Text(
-                    text = "No new apps to add yet. RoTone learns an app the first time it posts a " +
-                        "notification, so let one arrive and open this again.",
+                    text = stringResource(R.string.add_app_empty),
                     style = MaterialTheme.typography.bodyMedium,
                 )
             } else {
@@ -807,7 +840,7 @@ private fun AddAppDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Close")
+                Text(stringResource(R.string.action_close))
             }
         },
     )
@@ -825,19 +858,19 @@ private fun HintCard(isAppScope: Boolean) {
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Text(
-                text = "How it works",
+                text = stringResource(R.string.title_how_it_works),
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.SemiBold,
             )
             if (isAppScope) {
-                Hint("This list belongs to one app. Notifications from it use these sounds, and its own pointer advances independently of the default list.")
+                Hint(stringResource(R.string.hint_app_scope))
             } else {
-                Hint("This list is the fallback: every app without its own rotation uses it, and it has its own pointer.")
+                Hint(stringResource(R.string.hint_fallback_scope))
             }
-            Hint("Android does not let one app change another app's notification sound, so RoTone plays the tone itself each time a notification arrives.")
-            Hint("Set the apps you cover to Silent once, and you will hear only the rotating tone.")
-            Hint("Silent, vibrate and Do Not Disturb stay quiet: the pointer only moves when a tone actually plays.")
-            Hint("Every picked sound is copied into the app, so it keeps working if the original is deleted.")
+            Hint(stringResource(R.string.hint_android))
+            Hint(stringResource(R.string.hint_silent))
+            Hint(stringResource(R.string.hint_dnd))
+            Hint(stringResource(R.string.hint_copies))
         }
     }
 }

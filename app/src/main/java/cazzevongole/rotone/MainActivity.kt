@@ -197,10 +197,10 @@ class MainActivity : ComponentActivity() {
             val tone = store.import(uri, null)
             runOnUiThread {
                 if (tone == null) {
-                    notice = "That sound could not be added."
+                    notice = getString(R.string.notice_sound_failed)
                 } else {
                     updateScoped { it.copy(tones = it.tones + tone) }
-                    notice = "Added ${tone.name}"
+                    notice = getString(R.string.notice_sound_added, tone.name)
                 }
             }
         }.apply { isDaemon = true }.start()
@@ -216,15 +216,15 @@ class MainActivity : ComponentActivity() {
             )
             putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, false)
             putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, false)
-            putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, "Pick a sound")
+            putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, getString(R.string.picker_title))
         }
         runCatching { systemSoundPicker.launch(intent) }
-            .onFailure { notice = "No system sound picker on this device." }
+            .onFailure { notice = getString(R.string.notice_no_sound_picker) }
     }
 
     private fun pickAudioFile() {
         runCatching { audioFilePicker.launch(arrayOf("audio/*")) }
-            .onFailure { notice = "No file picker on this device." }
+            .onFailure { notice = getString(R.string.notice_no_file_picker) }
     }
 
     private fun openAccessSettings() {

@@ -19,6 +19,7 @@ bank, and let everything else share the default rotation — each list keeps its
 | Platform | Android 8.0 (API 26) and newer |
 | Built with | Kotlin, Jetpack Compose (Material 3) |
 | Permissions | Notification access only — no network, no accounts, no analytics |
+| Languages | English and Italian, following the system language |
 | Size | ~9.5 MB debug APK |
 
 ## Screenshots
@@ -60,6 +61,10 @@ A single screen, top to bottom:
 
 Dark and light themes follow the system, with Material You dynamic colours on Android 12+.
 
+Every label lives in `app/src/main/res/values/strings.xml`, with the Italian translation in
+`values-it/strings.xml` (including plurals), so Android picks the language from the system. On
+Android 13+ you can also change it for RoTone alone: *App info → Language → Italiano*.
+
 ## Install it on a phone
 
 ### Option A — download the released APK (easiest)
@@ -68,7 +73,7 @@ Every green push to `main` publishes the APK to the
 [Releases](https://github.com/cazzevongole/rotone/releases/latest) page, so this link always points
 at the newest build:
 
-1. Open the latest release and download **`rotone-v1.1.apk`** (the file name carries the version).
+1. Open the latest release and download **`rotone-v1.2.apk`** (the file name carries the version).
 2. Open it on the phone and allow "install unknown apps" for the app you opened it from when Android
    asks.
 
@@ -80,7 +85,7 @@ from.
 With the phone connected and USB debugging enabled:
 
 ```bash
-adb install -r rotone-v1.1.apk
+adb install -r rotone-v1.2.apk
 adb shell am start -n cazzevongole.rotone/.MainActivity
 ```
 
@@ -220,7 +225,7 @@ jobs:
 
 A failing test therefore stops the build before it starts, and a failing build means no release is
 published. The release job has a write-scoped `GITHUB_TOKEN`; the other two are read-only. Because
-the tag is derived from `versionName` (`1.0` today), pushes to `main` update the same release until
+the tag is derived from `versionName` (`1.2` today), pushes to `main` update the same release until
 the version in `app/build.gradle.kts` changes.
 
 ## How it works
@@ -270,6 +275,8 @@ app/src/main/java/cazzevongole/rotone/
 └── ui/
     ├── RotationScreen.kt         the whole screen in Compose
     └── Theme.kt                  Material 3 theme, dynamic colours
+app/src/main/res/values/                      English UI strings
+app/src/main/res/values-it/                   Italian UI strings
 app/src/test/java/cazzevongole/rotone/data/   JVM unit tests
 docs/                                         screenshots used above
 .github/workflows/ci.yml                      tests, build, release

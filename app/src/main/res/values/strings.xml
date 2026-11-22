@@ -1,4 +1,88 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">RoTone</string>
+
+    <!-- Status line under the title -->
+    <string name="status_paused">Paused</string>
+    <string name="status_off_for">Off for %1$s</string>
+    <string name="status_no_sounds_for">No sounds for %1$s yet</string>
+    <string name="status_add_sounds">Add sounds to start rotating</string>
+    <plurals name="status_shuffling">
+        <item quantity="one">Shuffling %1$d sound</item>
+        <item quantity="other">Shuffling %1$d sounds</item>
+    </plurals>
+    <string name="status_next">Next: %1$s</string>
+
+    <!-- Scope card and dialog -->
+    <string name="label_rotation_for">ROTATION FOR</string>
+    <string name="scope_all_apps">All other apps</string>
+    <string name="scope_default_list">the default list</string>
+    <string name="dialog_scope_title">Rotation for</string>
+    <string name="action_change">Change</string>
+    <string name="label_rotate_this_app">Rotate this app\'s notifications</string>
+    <string name="scope_follows_default">No sounds of its own yet, so it follows the default list</string>
+    <plurals name="scope_app_sounds">
+        <item quantity="one">%1$d sound just for this app</item>
+        <item quantity="other">%1$d sounds just for this app</item>
+    </plurals>
+
+    <!-- Rotation card -->
+    <string name="mode_in_order">In order</string>
+    <string name="mode_shuffle">Shuffle</string>
+    <string name="label_plays_next">PLAYS NEXT</string>
+    <string name="no_sounds_yet">No sounds yet</string>
+    <string name="action_restart">Restart</string>
+
+    <!-- Sounds list -->
+    <string name="section_sounds">Sounds</string>
+    <string name="sounds_none">none yet</string>
+    <string name="sounds_in_rotation">%1$d in rotation</string>
+    <string name="empty_title">No sounds in this rotation</string>
+    <string name="empty_body_app">Add sounds below to give this app its own list, or leave it empty to follow the default one.</string>
+    <string name="empty_body_default">Add notification ringtones or your own audio files below.</string>
+    <string name="row_plays_next">plays next</string>
+    <string name="cd_preview">Preview %1$s</string>
+    <string name="cd_move_up">Move up</string>
+    <string name="cd_move_down">Move down</string>
+    <string name="cd_remove_tone">Remove %1$s</string>
+    <string name="action_system_sound">System sound</string>
+    <string name="action_audio_file">Audio file</string>
+
+    <!-- Per-app list -->
+    <string name="title_per_app">Per-app rotations</string>
+    <string name="per_app_empty">No app-specific lists yet. Use Change above to give an app its own sounds, or switch rotation off for it. RoTone learns apps from their notifications, so there is nothing to type.</string>
+    <string name="app_state_off">off, its own sound plays</string>
+    <string name="app_state_follows_default">follows the default list</string>
+    <plurals name="app_row_sounds">
+        <item quantity="one">%1$d sound of its own</item>
+        <item quantity="other">%1$d sounds of its own</item>
+    </plurals>
+    <string name="cd_remove_app">Remove %1$s</string>
+
+    <!-- Add-app dialog -->
+    <string name="dialog_add_app_title">Add an app</string>
+    <string name="add_app_empty">No new apps to add yet. RoTone learns an app the first time it posts a notification, so let one arrive and open this again.</string>
+    <string name="action_add_app">Add app</string>
+    <string name="action_close">Close</string>
+
+    <!-- Notification access card -->
+    <string name="access_title">Notification access is off</string>
+    <string name="access_body">Android only lets an app react to notifications once you allow it. Open the settings, find RoTone in the list and turn it on.</string>
+    <string name="access_button">Open access settings</string>
+
+    <!-- How it works -->
+    <string name="title_how_it_works">How it works</string>
+    <string name="hint_app_scope">This list belongs to one app. Notifications from it use these sounds, and its own pointer advances independently of the default list.</string>
+    <string name="hint_fallback_scope">This list is the fallback: every app without its own rotation uses it, and it has its own pointer.</string>
+    <string name="hint_android">Android does not let one app change another app\'s notification sound, so RoTone plays the tone itself each time a notification arrives.</string>
+    <string name="hint_silent">Set the apps you cover to Silent once, and you will hear only the rotating tone.</string>
+    <string name="hint_dnd">Silent, vibrate and Do Not Disturb stay quiet: the pointer only moves when a tone actually plays.</string>
+    <string name="hint_copies">Every picked sound is copied into the app, so it keeps working if the original is deleted.</string>
+
+    <!-- Notices and pickers -->
+    <string name="notice_sound_failed">That sound could not be added.</string>
+    <string name="notice_sound_added">Added %1$s</string>
+    <string name="picker_title">Pick a sound</string>
+    <string name="notice_no_sound_picker">No system sound picker on this device.</string>
+    <string name="notice_no_file_picker">No file picker on this device.</string>
 </resources>
